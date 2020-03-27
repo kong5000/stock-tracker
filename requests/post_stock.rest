@@ -1,0 +1,9 @@
+POST http://localhost:3000/api/stocks
+Content-Type: application/json
+
+{
+        "ticker": "AAPL",
+        "name": "Apple Corporation",
+        "shares": 10,
+        "price": 100
+}
