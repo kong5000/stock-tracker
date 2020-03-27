@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js",
-    "watch": "nodemon index.js"
+    "start": "NODE_ENV=production node index.js",
+    "watch": "NODE_ENV=dev nodemon index.js",
+    "test": "NODE_ENV=test jest --verbose --runInBand"
   },
   "author": "",
   "license": "ISC",
@@ -16,5 +16,12 @@
     "express": "^4.17.1",
     "mongoose": "^5.9.6",
     "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "jest": "^25.2.3",
+    "supertest": "^4.0.2"
+  },
+  "jest": {
+    "testEnvironment": "node"
   }
 }

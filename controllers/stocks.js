@@ -6,8 +6,8 @@ stocksRouter.get('/', (req, res) => {
     res.send('<h1>Hello World!!</h1>')
 })
 
-stocksRouter.get('/api/stocks', (req, res) => {
-    console.log('Get Request made')
+stocksRouter.get('/api/stocks', async (req, res) => {
+    const stocks = await Stock.find({})
     res.json(stocks)
 })
 
