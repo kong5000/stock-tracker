@@ -6,40 +6,40 @@ stocksRouter.get('/', (req, res) => {
     res.send('<h1>Hello World!!</h1>')
 })
 
-stocksRouter.get('/api/stocks', async (req, res) => {
-    const stocks = await Stock.find({})
-    res.json(stocks)
+stocksRouter.get('/api/stocks', async (req, res, next) => {
+    try{
+        const stocks = await Stock.find({})
+        res.json(stocks)
+    }catch(exception){
+        next(exception)
+    }
 })
 
-stocksRouter.get('/api/stocks/:id', (req, res, next) => {
-    Stock.findById(req.params.id)
-        .then(
-            stock => {
-                if(stock){
-                    res.json(stock.toJSON())
-                }else{
-                    res.status(404).end()
-                }
-
-            }
-        )
-        .catch(error => {
-            //next called with parameter goes to error handler middleware
-            next(error)
-        })
+stocksRouter.get('/api/stocks/:id', async (req, res, next) => {
+    try {
+        const stock = await Stock.findById(req.params.id)
+        if (stock) {
+            res.json(stock.toJSON())
+        } else {
+            res.status(404).end()
+        }
+    } catch(exception){
+        next(exception)
+    }
 })
 
-stocksRouter.delete('/api/stocks/:id', (req, res) => {
-    const id = Number(req.params.id)
-    Stock.findByIdAndRemove(req.params.id)
-    .then(result => {
+stocksRouter.delete('/api/stocks/:id', async (req, res, next) => {
+    const id =req.params.id
+    try{
+        await Stock.findByIdAndRemove(id)
         res.status(204).end()
-    })
-    .catch(error => next(error))
+    }catch(exception){
+        next(exception)
+    }
 })
 
 
-stocksRouter.post('/api/stocks', (req, res, next) => {
+stocksRouter.post('/api/stocks', async (req, res, next) => {
     const body = req.body
 
     const stock = new Stock({
@@ -50,14 +50,15 @@ stocksRouter.post('/api/stocks', (req, res, next) => {
         costBasis: body.price * body.shares,
         date: body.date || new Date(),
     })
-
-    stock.save().then(savedStock => {
+    try{
+        const savedStock = await stock.save()
         res.json(savedStock.toJSON())
-    })
-    .catch(error => next(error))
+    }catch(exception){
+        next(exception)
+    }
 })
 
-stocksRouter.put('/api/stocks/:id', (req, res, next) => {
+stocksRouter.put('/api/stocks/:id', async (req, res, next) => {
     const body = req.body
     const stock = {
         ticker: body.ticker,
@@ -66,12 +67,12 @@ stocksRouter.put('/api/stocks/:id', (req, res, next) => {
         price: body.price,
         costBasis: body.costBasis,
     }
-
-    Stock.findByIdAndUpdate(req.params.id, stock, {new: true})
-    .then(updatedStock => {
-        res.json(updatedStock)
-    })
-    .catch(error => next(error))
+    try{
+        //passing in{ new: true} makes findByIdAndUpdate return the newly updated object
+        const updatedStock =  await Stock.findByIdAndUpdate(req.params.id, stock, { new: true })
+    }catch(exception){
+        next(exception)
+    }
 })
 
 module.exports = stocksRouter

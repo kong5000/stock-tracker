@@ -29,7 +29,7 @@ const initialStocks = [
 beforeEach(async () => {
     await Stock.deleteMany({})
     //Can't use foreach loop with async await
-    for(i = 0; i < initialStocks.length; i++){
+    for (i = 0; i < initialStocks.length; i++) {
         let stockObject = new Stock(initialStocks[i])
         await stockObject.save()
     }
@@ -50,12 +50,45 @@ test('correct number of stocks returned', async () => {
 
 test('can find a specific stock', async () => {
     const response = await api.get('/api/stocks')
-    console.log(response.body)
     const tickers = response.body.map(stock => stock.ticker)
-    console.log(tickers)
     expect(tickers).toContain(
         'AAPL'
     )
+})
+
+test('can delete a specific stock', async () => {
+    const stocks = await api.get('/api/stocks')
+    console.log(stocks.body)
+    const stockIDs = stocks.body.map(stock => stock.id)
+
+    await api.delete(`/api/stocks/${stockIDs[0]}`)
+
+    const remainingStocks = await api.get('/api/stocks')
+    console.log(remainingStocks.body.length)
+
+    expect(remainingStocks.body.length).toBe(initialStocks.length - 1)
+})
+
+test('can modify a stock', async () => {
+    const stocks = await api.get('/api/stocks')
+    const stockIDs = stocks.body.map(stock => stock.id)
+    const updateStock = {
+        "ticker": "AAPL",
+        "name": "Apple Inc.",
+        "shares": 1,
+        "price": 252.76
+    }
+    const response = api
+        .put(`/api/stocks/${stockIDs[0]}`)
+        .send(updateStock)
+        .end((err, res) => {
+            done()
+        })
+
+    const updatedStocks = await api.get('/api/stocks')
+    expect(updatedStocks.body[0].shares).toBe(updateStock.shares)
+    //Other stocks are unmodified
+    expect(updatedStocks.body[1].shares).toBe(initialStocks[1].shares)
 })
 
 afterAll(() => {
