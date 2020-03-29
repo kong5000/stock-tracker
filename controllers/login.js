@@ -3,21 +3,30 @@ const bcrypt = require('bcrypt')
 const loginRouter =  require('express').Router()
 const User = require('../models/user')
 
-const verifyPassword = async ( password, user ) => {
-    return bcrypt.compare(password, user.passwordHash)
+const generateTokenForUser = (user) => {
+    const userInfo = {
+        username: user.username,
+        id: user._id
+    }
+
+    const token = jwt.sign(userInfo, process.env.SECRET)
+    return token
 }
 
 loginRouter.post('/', async (req, res) => {
     const body = req.body
 
-    const validUsername = await User.findOne({ username: body.username})
-    if(validUsername){
-       const passwordValid = await bcrypt.compare(body.password, validUsername.passwordHash)
+    const user = await User.findOne({ username: body.username})
+    if(user){
+       const passwordValid = await bcrypt.compare(body.password, user.passwordHash)
         if(passwordValid){
-            res.status(200).end()
+            const token = generateTokenForUser(user)
+            res.status(200).send({token, username:user.username})
         }
     }
-    res.status(400).end()
+    res.status(401).json({
+        error: 'invalid login credentials'
+    })
 })
 
 module.exports = loginRouter

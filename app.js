@@ -5,6 +5,7 @@ const config = require('./utils/config')
 const mongoose = require('mongoose')
 const stocksRouter = require('./controllers/stocks')
 const usersRouter = require('./controllers/users')
+const loginRouter = require('./controllers/login')
 const middleware = require('./utils/middleware')
 mongoose.set('useFindAndModify', false)
 
@@ -24,6 +25,7 @@ app.use(express.json())
 app.use(morgan('tiny'))
 app.use('/', stocksRouter)
 app.use('/api/users', usersRouter)
+app.use('/api/login', loginRouter)
 
 
 app.use(middleware.errorHandler)

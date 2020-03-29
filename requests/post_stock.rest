@@ -1,5 +1,6 @@
-POST http://localhost:3000/api/stocks
+POST http://localhost:3000/api/users/asset
 Content-Type: application/json
+Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImtlaXRoIiwiaWQiOiI1ZTdmZmZlZDdkN2ZjNjE4MGE5ZWM0NWIiLCJpYXQiOjE1ODU0NTU5NjF9.3L7Y1kcSV_QW4VEjBFHr26ZugzNhRZZsutewM6L5KZc
 
 {
         "ticker": "AAPL",
