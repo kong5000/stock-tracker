@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema(
     {
         username: {type: String, required: true, minlength: 4, unique: true},
         passwordHash: {type: String, required: true, minlength: 4},
+        cash: {type: Number, default: 0},
         stocks: [{
             ticker: {type: String, required: true},
             name: {type: String, required: true},

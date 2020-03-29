@@ -15,6 +15,7 @@ const extractToken = (request) => {
     return null
 }
 
+
 usersRouter.post('/', async (req, res, next) => {
     const body = req.body
     if (body.password.length < MIN_PASSWORD_LENGTH) {
@@ -40,6 +41,34 @@ usersRouter.post('/', async (req, res, next) => {
     }
 })
 
+usersRouter.post('/sell', async (req, res, next) => {
+    const body = req.body
+    const token = extractToken(req)
+    const decodedToken = jwt.verify(token, process.env.SECRET)
+    if(!token || !decodedToken){
+        return res.status(401).json({error: 'invalid token'})
+    }
+
+    const user = await User.findById(decodedToken.id)
+    const userStocks = user.stocks
+
+    const stock = userStocks.find(stock => stock.ticker === body.ticker)
+    if(!stock){
+        return res.status(401).json({error: 'user does not own any shares of this stock'})
+    }
+    if(stock.shares < body.shares){
+        return res.status(401).json({error: 'cannot sell more shares than the user owns'})
+    }
+    stock.shares -= body.shares
+    if(stock.shares === 0){
+        const updatedStockList = user.stocks.filter(stock => stock.shares > 0)
+        user.stocks = updatedStockList
+    }
+    user.cash += body.shares * body.price
+    user.save()
+    res.status(200).json(user)
+})
+
 usersRouter.post('/asset', async (req, res, next) => {
     const body = req.body
     const token = extractToken(req)
@@ -55,10 +84,22 @@ usersRouter.post('/asset', async (req, res, next) => {
         name: body.name,
         shares: body.shares,
         price: body.price,
-        costBasis: body.price * body.shares,
+        costBasis: body.price,
         date: body.date || new Date(),
     })
-    user.stocks = user.stocks.concat(stock)
+
+    const foundStockIndex = user.stocks.findIndex(asset => asset.ticker === stock.ticker)
+    if(foundStockIndex >= 0){
+        const existingStock = user.stocks[foundStockIndex]
+        const totalValue = (existingStock.costBasis * existingStock.shares) + (stock.shares * stock.price)
+        const totalShares = existingStock.shares + stock.shares
+        const newCostBasis = totalValue / totalShares
+        existingStock.costBasis = newCostBasis
+        existingStock.shares += stock.shares
+    }else{
+        user.stocks = user.stocks.concat(stock)
+    }
+
     const updatedUser = await user.save()
     res.json(updatedUser)
 })
