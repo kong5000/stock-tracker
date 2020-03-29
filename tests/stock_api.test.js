@@ -1,96 +1,98 @@
-const mongoose = require('mongoose')
-const supertest = require('supertest')
-const app = require('../app')
-const Stock = require('../models/stock')
+// const mongoose = require('mongoose')
+// const supertest = require('supertest')
+// const app = require('../app')
+// const Stock = require('../models/stock')
 
-const api = supertest(app)
+// const api = supertest(app)
 
-const initialStocks = [
-    {
-        "ticker": "AAPL",
-        "name": "Apple Inc.",
-        "shares": 10,
-        "price": 252.76
-    },
-    {
-        "ticker": "GOOGL",
-        "name": "Alphabet Inc.",
-        "shares": 5,
-        "price": 1129.11
-    },
-    {
-        "ticker": "IBM",
-        "name": "International Business Machines Corporation",
-        "shares": 12,
-        "price": 109.78
-    }
-]
+// const getStocks = () => {return api.get('/api/stocks')}
 
-beforeEach(async () => {
-    await Stock.deleteMany({})
-    //Can't use foreach loop with async await
-    for (i = 0; i < initialStocks.length; i++) {
-        let stockObject = new Stock(initialStocks[i])
-        await stockObject.save()
-    }
-})
+// const initialStocks = [
+//     {
+//         "ticker": "AAPL",
+//         "name": "Apple Inc.",
+//         "shares": 10,
+//         "price": 252.76
+//     },
+//     {
+//         "ticker": "GOOGL",
+//         "name": "Alphabet Inc.",
+//         "shares": 5,
+//         "price": 1129.11
+//     },
+//     {
+//         "ticker": "IBM",
+//         "name": "International Business Machines Corporation",
+//         "shares": 12,
+//         "price": 109.78
+//     }
+// ]
 
-test('Stocks returned as json', async () => {
-    await api
-        .get('/api/stocks')
-        .expect(200)
-        .expect('Content-Type', /application\/json/)
-})
+// beforeEach(async () => {
+//     await Stock.deleteMany({})
+//     //Can't use foreach loop with async await
+//     for (i = 0; i < initialStocks.length; i++) {
+//         let stockObject = new Stock(initialStocks[i])
+//         await stockObject.save()
+//     }
+// })
 
-test('correct number of stocks returned', async () => {
-    const response = await api.get('/api/stocks')
+// test('Stocks returned as json', async () => {
+//     await api
+//         .get('/api/stocks')
+//         .expect(200)
+//         .expect('Content-Type', /application\/json/)
+// })
 
-    expect(response.body.length).toBe(initialStocks.length)
-})
+// test('correct number of stocks returned', async () => {
+//     const response = await getStocks()
 
-test('can find a specific stock', async () => {
-    const response = await api.get('/api/stocks')
-    const tickers = response.body.map(stock => stock.ticker)
-    expect(tickers).toContain(
-        'AAPL'
-    )
-})
+//     expect(response.body.length).toBe(initialStocks.length)
+// })
 
-test('can delete a specific stock', async () => {
-    const stocks = await api.get('/api/stocks')
-    console.log(stocks.body)
-    const stockIDs = stocks.body.map(stock => stock.id)
+// test('can find a specific stock', async () => {
+//     const response = await getStocks()
+//     const tickers = response.body.map(stock => stock.ticker)
+//     expect(tickers).toContain(
+//         'AAPL'
+//     )
+// })
 
-    await api.delete(`/api/stocks/${stockIDs[0]}`)
+// test('can delete a specific stock', async () => {
+//     const stocks = await getStocks()
+//     console.log(stocks.body)
+//     const stockIDs = stocks.body.map(stock => stock.id)
 
-    const remainingStocks = await api.get('/api/stocks')
-    console.log(remainingStocks.body.length)
+//     await api.delete(`/api/stocks/${stockIDs[0]}`)
 
-    expect(remainingStocks.body.length).toBe(initialStocks.length - 1)
-})
+//     const remainingStocks = await getStocks()
+//     console.log(remainingStocks.body.length)
 
-test('can modify a stock', async () => {
-    const stocks = await api.get('/api/stocks')
-    const stockIDs = stocks.body.map(stock => stock.id)
-    const updateStock = {
-        "ticker": "AAPL",
-        "name": "Apple Inc.",
-        "shares": 1,
-        "price": 252.76
-    }
-    const response = api
-        .put(`/api/stocks/${stockIDs[0]}`)
-        .send(updateStock)
-        .end((err, res) => {
-            done()
-        })
+//     expect(remainingStocks.body.length).toBe(initialStocks.length - 1)
+// })
 
-    const updatedStocks = await api.get('/api/stocks')
-    expect(updatedStocks.body[0].shares).toBe(updateStock.shares)
-    //Other stocks are unmodified
-    expect(updatedStocks.body[1].shares).toBe(initialStocks[1].shares)
-})
+// test('can modify a stock', async () => {
+//     const stocks = await getStocks()
+//     const stockIDs = stocks.body.map(stock => stock.id)
+//     const updateStock = {
+//         "ticker": "AAPL",
+//         "name": "Apple Inc.",
+//         "shares": 1,
+//         "price": 252.76
+//     }
+//     const response = api
+//         .put(`/api/stocks/${stockIDs[0]}`)
+//         .send(updateStock)
+//         .end((err, res) => {
+//             done()
+//         })
 
-afterAll(() => {
-    mongoose.connection.close()
-})
+//     const updatedStocks = await getStocks()
+//     expect(updatedStocks.body[0].shares).toBe(updateStock.shares)
+//     //Other stocks are unmodified
+//     expect(updatedStocks.body[1].shares).toBe(initialStocks[1].shares)
+// })
+
+// afterAll(() => {
+//     mongoose.connection.close()
+// })
