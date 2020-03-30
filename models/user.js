@@ -12,7 +12,7 @@ const userSchema = new mongoose.Schema(
             shares: {type: Number, required: true},
             price: {type: String, required: true},
             costBasis: Number,
-            date: Date,
+            date: Number,
         }]
     }
 )

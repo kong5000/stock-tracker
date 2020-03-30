@@ -1,10 +1,7 @@
-POST http://localhost:3000/api/users/price
+POST http://localhost:3000/api/portfolio/price
 Content-Type: application/json
 Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImtlaXRoIiwiaWQiOiI1ZTgxMWI2NDBhNmU1ZDE2ZGQ1YTBhODYiLCJpYXQiOjE1ODU1MTk0ODJ9.3oXLyA55sqNKMMuiMn644uA2Vrc7A7vxsdGG98AEzZ4
 
 {
-        "ticker": "AAPL",
-        "name": "Apple Corp",
-        "shares": 32,
-        "price": 85
+        "ticker": "AAPL"
 }
