@@ -3,6 +3,7 @@ const User = require('../models/user')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const Stock = require('../models/stock')
+const axios = require('axios')
 
 const MIN_PASSWORD_LENGTH = 4
 const SALT_ROUNDS = 10
@@ -41,6 +42,19 @@ usersRouter.post('/', async (req, res, next) => {
     }
 })
 
+usersRouter.post('/price', async (req, res, next) => {
+    const body = req.body
+    const url = `https://cloud.iexapis.com/stable/stock/${body.ticker}/quote/latestPrice?token=${process.env.IEX_API_KEY}`    
+   
+    try{
+        const response = await axios.get(url)
+        res.status(200).json( {latestPrice: response.data} )
+    }catch (error) {
+        console.log(error)
+        return res.status(401).json({error: 'stock not found'})
+    }
+})
+
 usersRouter.post('/sell', async (req, res, next) => {
     const body = req.body
     const token = extractToken(req)
@@ -67,6 +81,48 @@ usersRouter.post('/sell', async (req, res, next) => {
     user.cash += body.shares * body.price
     user.save()
     res.status(200).json(user)
+})
+
+usersRouter.post('/update', async (req, res, next) => {
+    const body = req.body
+    const token = extractToken(req)
+    const decodedToken = jwt.verify(token, process.env.SECRET)
+    if(!token || !decodedToken){
+        return res.status(401).json({error: 'invalid token'})
+    }
+
+    const user = await User.findById(decodedToken.id)
+    const stocks = user.stocks
+    const base= 'https://cloud.iexapis.com/stable/stock/market/batch?'
+    const types = '&types=quote'
+    const key = `&token=${process.env.IEX_API_KEY}`
+    let symbols = 'symbols=' 
+    for(i = 0; i < stocks.length; i++){
+        if(i === 0){
+            symbols+= stocks[i].ticker
+        }else{
+            symbols+= `,${stocks[i].ticker}`
+        }
+    }
+    const url = base + symbols + types + key
+
+    try{
+        const response = await axios.get(url)
+        const updatedStocks = Object.values(response.data)
+        stocks.forEach(stock => {
+            for(i = 0; i < updatedStocks.length; i++){
+                if(updatedStocks[i].quote.symbol === stock.ticker){
+                    stock.price = updatedStocks[i].quote.latestPrice
+                }
+            }
+        })
+        const updatedUser = await user.save()
+        res.status(200).send(updatedUser)
+    }catch (error) {
+        console.log(error)
+        return res.status(401).json({error: 'stock not found'})
+    }
+
 })
 
 usersRouter.post('/asset', async (req, res, next) => {
@@ -104,4 +160,19 @@ usersRouter.post('/asset', async (req, res, next) => {
     res.json(updatedUser)
 })
 
+
+usersRouter.delete('/', async (req, res, next) => {
+    const token = extractToken(req)
+    const decodedToken = jwt.verify(token, process.env.SECRET)
+    if(!token || !decodedToken){
+        return res.status(401).json({error: 'invalid token'})
+    }
+
+    try{
+        await User.findByIdAndRemove(decodedToken.id)
+        res.status(204).end()
+    }catch(exception){
+        next(exception)
+    }
+})
 module.exports = usersRouter
