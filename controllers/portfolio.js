@@ -2,6 +2,8 @@ const portfolioRouter = require('express').Router()
 const User = require('../models/user')
 const jwt = require('jsonwebtoken')
 const axios = require('axios')
+const Stock = require('../models/stock')
+
 
 const extractToken = (request) => {
     const authorization = request.get('authorization')
@@ -10,6 +12,26 @@ const extractToken = (request) => {
     }
     return null
 }
+
+portfolioRouter.get('/', async (req, res, next) => {
+    const token = extractToken(req)
+    const decodedToken = jwt.verify(token, process.env.SECRET)
+    if(!token || !decodedToken){
+        return res.status(401).json({error: 'invalid token'})
+    }
+
+    try{
+        const user = await User.findById(decodedToken.id)
+        if(user){
+            res.status(200).json(user.stocks)
+        }
+        else{
+            res.status(400).send({error: 'user not found'})
+        }
+    }catch(error){
+        next(error)
+    }
+})
 
 portfolioRouter.post('/price', async (req, res, next) => {
     const body = req.body
@@ -48,7 +70,7 @@ portfolioRouter.post('/sell', async (req, res, next) => {
         user.stocks = updatedStockList
     }
     user.cash += body.shares * body.price
-    user.save()
+    await user.save()
     res.status(200).json(user)
 })
 
@@ -106,14 +128,14 @@ portfolioRouter.post('/asset', async (req, res, next) => {
 
     const user = await User.findById(decodedToken.id)
 
-    const stock = new Stock({
+    const stock = {
         ticker: body.ticker,
         name: body.name,
         shares: body.shares,
         price: body.price,
         costBasis: body.price,
         date: body.date || new Date(),
-    })
+    }
 
     const foundStockIndex = user.stocks.findIndex(asset => asset.ticker === stock.ticker)
     if(foundStockIndex >= 0){

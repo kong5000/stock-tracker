@@ -23,10 +23,12 @@ loginRouter.post('/', async (req, res) => {
             const token = generateTokenForUser(user)
             res.status(200).send({token, username:user.username})
         }
-    }
+    }else{
     res.status(401).json({
         error: 'invalid login credentials'
     })
+    }
+
 })
 
 module.exports = loginRouter
