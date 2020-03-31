@@ -1,3 +1,4 @@
+const User = require('../models/user')
 const initialUser = {
     username: 'testuser',
     password: 'testpassword'
@@ -12,6 +13,11 @@ const testStocks = [
     }
 ]
 
+const getTestUser = async () => {
+    const user = await User.findOne({username: initialUser.username})
+    return user
+}
+
 module.exports = {
-    initialUser, testStocks
+    initialUser, testStocks, getTestUser
 }

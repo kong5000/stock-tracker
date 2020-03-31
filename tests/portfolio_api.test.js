@@ -57,13 +57,13 @@ const getTestUserAssets = async () => {
 }
 
 const getTestUserStocks = async () => {
-    const assets = await getTestUserAssets()
-    return assets.stocks
+    const user = await helper.getTestUser()
+    return user.stocks
 }
 
 const getTestUserCash = async () => {
-    const assets = await getTestUserAssets()
-    return assets.cash
+    const user = await helper.getTestUser()
+    return user.cash
 }
 
 const sellStock = async (order) => {
@@ -112,6 +112,26 @@ describe('Selling stocks from portfolio', () => {
             .expect(401)
     })
 
+    test('Error on selling more shares than a user owns', async () => {
+        const stock = helper.testStocks[0]
+        await addStock(stock)
+
+        const sharesToSell = 2 * stock.shares
+        const price = 10
+        const sellOrder = {
+            ticker: stock.ticker,
+            shares: sharesToSell,
+            price
+        }
+
+        const token = await getToken()
+        await api
+            .post('/api/portfolio/sell')
+            .set('Authorization', 'Bearer ' + token)
+            .send(sellOrder)
+            .expect(401)
+    })
+
     test('Selling a stock reduces share count and adds sold value to user cash', async () => {
         const stock = helper.testStocks[0]
         await addStock(stock)
@@ -131,5 +151,39 @@ describe('Selling stocks from portfolio', () => {
 
         const cash = await getTestUserCash()
         expect(cash).toEqual(sharesToSell * price)
+    })
+
+    test('Selling all shares of a stock removes it from the user\'s account', async () => {
+        const stock = helper.testStocks[0]
+        await addStock(stock)
+        const sharesToSell = stock.shares
+        const price = stock.price
+        const sellOrder = {
+            ticker: stock.ticker,
+            shares: sharesToSell,
+            price
+        }
+        await sellStock(sellOrder)
+        const user = await helper.getTestUser()
+        const stocks = user.stocks
+        expect(stocks.length).toBe(0)
+    })
+})
+
+describe('Access external stock api', () => {
+    test('Can update prices from IEX api', async () => {
+        const stock = { ...helper.testStocks[0] }
+        stock.price = 0;
+        await addStock(stock)
+
+        const token = await getToken()
+        await api
+            .post('/api/portfolio/update')
+            .set('Authorization', 'Bearer ' + token)
+            .expect(200)
+        const user = await helper.getTestUser()
+        const stocks = user.stocks
+        const updatedStock = stocks.filter(asset => asset.ticker === stock.ticker)
+        expect(updatedStock.price).not.toBe(stock.price)
     })
 })

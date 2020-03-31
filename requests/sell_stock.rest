@@ -1,6 +1,6 @@
 POST http://localhost:3000/api/portfolio/sell
 Content-Type: application/json
-Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImtlaXRoIiwiaWQiOiI1ZTgxMzk0ZTBhNmU1ZDE2ZGQ1YTBhOGIiLCJpYXQiOjE1ODU1MjcxOTR9.HQ17iKV6TUS3BxnnHhUVE-_kvHMlLZWuVDs7zs59E0I
+Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImtlaXRoIiwiaWQiOiI1ZTgzOTQzYmQ5MzU0YjEzOTkxOGMwMzQiLCJpYXQiOjE1ODU2ODE1MTJ9.XRKEfDvmcQCfdqAdd6b9Th-m8WbIKOcRh_3xdLTSaXg
 
 {
         "ticker": "GOOG",
