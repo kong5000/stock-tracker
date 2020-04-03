@@ -23,7 +23,7 @@ portfolioRouter.get('/', async (req, res, next) => {
     try {
         const user = await User.findById(decodedToken.id)
         if (user) {
-            res.status(200).json({ stocks: user.stocks, cash: user.cash })
+            res.status(200).json({ stocks: user.assets.stocks, cash: user.assets.cash })
         }
         else {
             res.status(400).send({ error: 'user not found' })
@@ -55,7 +55,7 @@ portfolioRouter.post('/sell', async (req, res, next) => {
     }
 
     const user = await User.findById(decodedToken.id)
-    const userStocks = user.stocks
+    const userStocks = user.assets.stocks
 
     const stock = userStocks.find(stock => stock.ticker === body.ticker)
     if (!stock) {
@@ -66,12 +66,12 @@ portfolioRouter.post('/sell', async (req, res, next) => {
     }
     stock.shares -= body.shares
     if (stock.shares === 0) {
-        const updatedStockList = user.stocks.filter(stock => stock.shares > 0)
-        user.stocks = updatedStockList
+        const updatedStockList = user.assets.stocks.filter(stock => stock.shares > 0)
+        user.assets.stocks = updatedStockList
     }
-    user.cash += body.shares * body.price
+    user.assets.cash += body.shares * body.price
     await user.save()
-    res.status(200).json(user)
+    res.status(200).json(user.assets.stocks)
 })
 
 portfolioRouter.post('/update', async (req, res, next) => {
@@ -83,7 +83,7 @@ portfolioRouter.post('/update', async (req, res, next) => {
     }
 
     const user = await User.findById(decodedToken.id)
-    const stocks = user.stocks
+    const stocks = user.assets.stocks
     const base = 'https://cloud.iexapis.com/stable/stock/market/batch?'
     const types = '&types=quote'
     const key = `&token=${process.env.IEX_API_KEY}`
@@ -137,20 +137,20 @@ portfolioRouter.post('/asset', async (req, res, next) => {
         date: body.date || new Date(),
     }
 
-    const foundStockIndex = user.stocks.findIndex(asset => asset.ticker === stock.ticker)
+    const foundStockIndex = user.assets.stocks.findIndex(asset => asset.ticker === stock.ticker)
     if (foundStockIndex >= 0) {
-        const existingStock = user.stocks[foundStockIndex]
+        const existingStock = user.assets.stocks[foundStockIndex]
         const totalValue = (existingStock.costBasis * existingStock.shares) + (stock.shares * stock.price)
         const totalShares = existingStock.shares + stock.shares
         const newCostBasis = totalValue / totalShares
         existingStock.costBasis = newCostBasis
         existingStock.shares += stock.shares
     } else {
-        user.stocks = user.stocks.concat(stock)
+        user.assets.stocks = user.assets.stocks.concat(stock)
     }
 
     const updatedUser = await user.save()
-    res.json(updatedUser)
+    res.json(updatedUser.assets.stocks)
 })
 
 module.exports = portfolioRouter

@@ -3,18 +3,14 @@ const User = require('../models/user')
 const supertest = require('supertest')
 const app = require('../app')
 const api = supertest(app)
-
-const initialUser = {
-    username: 'testuser',
-    password: 'testpassword'
-}
+const helper = require('./test_helper')
 
 beforeEach(async () => {
     await User.deleteMany({})
 
     await api
         .post('/api/users')
-        .send(initialUser)
+        .send(helper.testUser)
         .expect(200)
         .expect('Content-Type', /application\/json/)
 })
@@ -49,7 +45,7 @@ describe('User creation validation', () => {
         const initialUsers = await User.find({})
         const initialUserCount = initialUsers.length
 
-        const newUser = initialUser
+        const newUser = helper.testUser
 
         await api
             .post('/api/users')
@@ -94,7 +90,6 @@ describe('User creation validation', () => {
         const currentUserCount = currentUsers.length
 
         expect(currentUserCount).toBe(initialUserCount)
-
     })
 
 })

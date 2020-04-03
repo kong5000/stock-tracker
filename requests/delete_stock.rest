@@ -1,1 +1,1 @@
-DELETE http://localhost:3000/api/stocks/5e7d4d12acd9ea1e91f888a1
+DELETE http://localhost:3003/api/stocks/5e7d4d12acd9ea1e91f888a1

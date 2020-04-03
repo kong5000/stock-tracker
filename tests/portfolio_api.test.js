@@ -1,3 +1,4 @@
+const mongoose = require('mongoose')
 const User = require('../models/user')
 const supertest = require('supertest')
 const app = require('../app')
@@ -16,7 +17,7 @@ const getToken = async () => {
 const logUserIn = async () => {
     const user = await api
         .post('/api/login')
-        .send(helper.initialUser)
+        .send(helper.testUser)
         .expect(200)
     authorizationToken = user.body.token
     return authorizationToken
@@ -25,7 +26,7 @@ const logUserIn = async () => {
 const createUser = async (user) => {
     await api
         .post('/api/users')
-        .send(helper.initialUser)
+        .send(helper.testUser)
         .expect(200)
         .expect('Content-Type', /application\/json/)
 }
@@ -45,25 +46,14 @@ const addStock = async (stock) => {
         .expect('Content-Type', /application\/json/)
 }
 
-const getTestUserAssets = async () => {
-    const token = await getToken()
-
-    const response = await api
-        .get('/api/portfolio')
-        .set('Authorization', 'Bearer ' + token)
-        .expect(200)
-        .expect('Content-Type', /application\/json/)
-    return response.body
-}
-
 const getTestUserStocks = async () => {
     const user = await helper.getTestUser()
-    return user.stocks
+    return user.assets.stocks
 }
 
 const getTestUserCash = async () => {
     const user = await helper.getTestUser()
-    return user.cash
+    return user.assets.cash
 }
 
 const sellStock = async (order) => {
@@ -79,7 +69,7 @@ const sellStock = async (order) => {
 
 beforeEach(async () => {
     await deleteAllUsers()
-    await createUser(helper.initialUser)
+    await createUser(helper.testUser)
     await logUserIn()
 })
 
@@ -165,7 +155,7 @@ describe('Selling stocks from portfolio', () => {
         }
         await sellStock(sellOrder)
         const user = await helper.getTestUser()
-        const stocks = user.stocks
+        const stocks = user.assets.stocks
         expect(stocks.length).toBe(0)
     })
 })
@@ -182,8 +172,12 @@ describe('Access external stock api', () => {
             .set('Authorization', 'Bearer ' + token)
             .expect(200)
         const user = await helper.getTestUser()
-        const stocks = user.stocks
+        const stocks = user.assets.stocks
         const updatedStock = stocks.filter(asset => asset.ticker === stock.ticker)
         expect(updatedStock.price).not.toBe(stock.price)
     })
+})
+
+afterAll(() => {
+    mongoose.connection.close()
 })
