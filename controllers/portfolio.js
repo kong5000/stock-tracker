@@ -23,7 +23,7 @@ portfolioRouter.get('/', async (req, res, next) => {
     try {
         const user = await User.findById(decodedToken.id)
         if (user) {
-            res.status(200).json({ stocks: user.assets.stocks, cash: user.assets.cash })
+            res.status(200).json(user.assets)
         }
         else {
             res.status(400).send({ error: 'user not found' })
@@ -71,7 +71,7 @@ portfolioRouter.post('/sell', async (req, res, next) => {
     }
     user.assets.cash += body.shares * body.price
     await user.save()
-    res.status(200).json(user.assets.stocks)
+    res.status(200).json(user.assets)
 })
 
 portfolioRouter.post('/update', async (req, res, next) => {
@@ -110,7 +110,7 @@ portfolioRouter.post('/update', async (req, res, next) => {
             }
         })
         const updatedUser = await user.save()
-        res.status(200).send(updatedUser)
+        res.status(200).send(updatedUser.assets)
     } catch (error) {
         console.log(error)
         return res.status(401).json({ error: 'stock not found' })
@@ -150,7 +150,7 @@ portfolioRouter.post('/asset', async (req, res, next) => {
     }
 
     const updatedUser = await user.save()
-    res.json(updatedUser.assets.stocks)
+    res.json(updatedUser.assets)
 })
 
 module.exports = portfolioRouter
