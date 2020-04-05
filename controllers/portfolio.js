@@ -78,7 +78,6 @@ portfolioRouter.post('/sell', async (req, res, next) => {
 })
 
 portfolioRouter.post('/update', async (req, res, next) => {
-    const body = req.body
     const token = extractToken(req)
     const decodedToken = jwt.verify(token, process.env.SECRET)
     if (!token || !decodedToken) {
@@ -86,6 +85,9 @@ portfolioRouter.post('/update', async (req, res, next) => {
     }
 
     const user = await User.findById(decodedToken.id)
+    if(user.assets.stocks.length === 0){
+        return res.status(200).end()
+    }
     const stocks = user.assets.stocks
     const base = 'https://cloud.iexapis.com/stable/stock/market/batch?'
     const types = '&types=quote'
