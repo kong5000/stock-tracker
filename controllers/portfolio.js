@@ -69,7 +69,10 @@ portfolioRouter.post('/sell', async (req, res, next) => {
         const updatedStockList = user.assets.stocks.filter(stock => stock.shares > 0)
         user.assets.stocks = updatedStockList
     }
-    user.assets.cash += body.shares * body.price
+    if(body.useCash){
+        user.assets.cash += body.shares * body.price
+    }
+
     await user.save()
     res.status(200).json(user.assets)
 })
@@ -120,6 +123,7 @@ portfolioRouter.post('/update', async (req, res, next) => {
 
 portfolioRouter.post('/asset', async (req, res, next) => {
     const body = req.body
+    
     const token = extractToken(req)
     const decodedToken = jwt.verify(token, process.env.SECRET)
     if (!token || !decodedToken) {
@@ -127,6 +131,14 @@ portfolioRouter.post('/asset', async (req, res, next) => {
     }
 
     const user = await User.findById(decodedToken.id)
+
+    if(body.useCash){
+        if(user.assets.cash < body.shares * body.price){
+            return res.status(400).json({ error: 'insufficient cash in portfolio' })
+        }else{
+            user.assets.cash -= body.shares * body.price
+        }
+    }
 
     const stock = {
         ticker: body.ticker,
@@ -148,6 +160,8 @@ portfolioRouter.post('/asset', async (req, res, next) => {
     } else {
         user.assets.stocks = user.assets.stocks.concat(stock)
     }
+
+
 
     const updatedUser = await user.save()
     res.json(updatedUser.assets)
