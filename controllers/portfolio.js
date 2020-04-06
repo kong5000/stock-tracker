@@ -2,8 +2,6 @@ const portfolioRouter = require('express').Router()
 const User = require('../models/user')
 const jwt = require('jsonwebtoken')
 const axios = require('axios')
-const Stock = require('../models/stock')
-
 
 const extractToken = (request) => {
     const authorization = request.get('authorization')
@@ -11,6 +9,13 @@ const extractToken = (request) => {
         return authorization.substring(7)
     }
     return null
+}
+
+const getPortfolioValue = (stocks) => {
+    const getTotal = (total, stock) => {
+        return total + stock.price * stock.shares
+    }
+    return (stocks.reduce(getTotal, 0))
 }
 
 portfolioRouter.get('/', async (req, res, next) => {
@@ -84,11 +89,15 @@ portfolioRouter.post('/update', async (req, res, next) => {
         return res.status(401).json({ error: 'invalid token' })
     }
 
+
     const user = await User.findById(decodedToken.id)
     if(user.assets.stocks.length === 0){
         return res.status(200).end()
     }
+    const portfolioValue = getPortfolioValue(user.assets.stocks)
+
     const stocks = user.assets.stocks
+
     const base = 'https://cloud.iexapis.com/stable/stock/market/batch?'
     const types = '&types=quote'
     const key = `&token=${process.env.IEX_API_KEY}`
@@ -108,9 +117,10 @@ portfolioRouter.post('/update', async (req, res, next) => {
         stocks.forEach(stock => {
             for (i = 0; i < updatedStocks.length; i++) {
                 if (updatedStocks[i].quote.symbol === stock.ticker) {
-                    stock.price = updatedStocks[i].quote.latestPrice
-                    console.log(updatedStocks[i].quote.latestUpdate)
+                    const latestPrice = updatedStocks[i].quote.latestPrice
+                    stock.price = latestPrice
                     stock.date = updatedStocks[i].quote.latestUpdate
+                    stock.currentWeight = (latestPrice * stock.shares) / portfolioValue
                 }
             }
         })
@@ -141,6 +151,7 @@ portfolioRouter.post('/asset', async (req, res, next) => {
             user.assets.cash -= body.shares * body.price
         }
     }
+    const totalPortfolioValue = getPortfolioValue(user.assets.stocks)
 
     const stock = {
         ticker: body.ticker,
@@ -149,6 +160,9 @@ portfolioRouter.post('/asset', async (req, res, next) => {
         price: body.price,
         costBasis: body.price,
         date: body.date || new Date(),
+        targetWeight: body.targetWeight,
+        currentWeight: body.price * body.shares / (totalPortfolioValue + body.price * body.shares),
+        testValue: "HELLO"
     }
 
     const foundStockIndex = user.assets.stocks.findIndex(asset => asset.ticker === stock.ticker)
@@ -162,8 +176,6 @@ portfolioRouter.post('/asset', async (req, res, next) => {
     } else {
         user.assets.stocks = user.assets.stocks.concat(stock)
     }
-
-
 
     const updatedUser = await user.save()
     res.json(updatedUser.assets)

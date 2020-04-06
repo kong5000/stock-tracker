@@ -14,6 +14,8 @@ const userSchema = new mongoose.Schema(
                 price: {type: String, required: true},
                 costBasis: Number,
                 date: Number,
+                currentWeight: Number,
+                targetWeight: Number,
             }]
         }
     }

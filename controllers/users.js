@@ -2,8 +2,6 @@ const usersRouter = require('express').Router()
 const User = require('../models/user')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
-const Stock = require('../models/stock')
-const axios = require('axios')
 
 const MIN_PASSWORD_LENGTH = 4
 const SALT_ROUNDS = 10
