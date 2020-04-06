@@ -18,6 +18,21 @@ const getPortfolioValue = (stocks) => {
     return (stocks.reduce(getTotal, 0))
 }
 
+const makeStockUpdateApiUrl = (stocks) => {
+    const base = 'https://cloud.iexapis.com/stable/stock/market/batch?'
+    const types = '&types=quote'
+    const key = `&token=${process.env.IEX_API_KEY}`
+    let symbols = 'symbols='
+    for (i = 0; i < stocks.length; i++) {
+        if (i === 0) {
+            symbols += stocks[i].ticker
+        } else {
+            symbols += `,${stocks[i].ticker}`
+        }
+    }
+    return base + symbols + types + key
+}
+
 portfolioRouter.get('/', async (req, res, next) => {
     const token = extractToken(req)
     const decodedToken = jwt.verify(token, process.env.SECRET)
@@ -94,22 +109,9 @@ portfolioRouter.post('/update', async (req, res, next) => {
     if(user.assets.stocks.length === 0){
         return res.status(200).end()
     }
-    const portfolioValue = getPortfolioValue(user.assets.stocks)
 
     const stocks = user.assets.stocks
-
-    const base = 'https://cloud.iexapis.com/stable/stock/market/batch?'
-    const types = '&types=quote'
-    const key = `&token=${process.env.IEX_API_KEY}`
-    let symbols = 'symbols='
-    for (i = 0; i < stocks.length; i++) {
-        if (i === 0) {
-            symbols += stocks[i].ticker
-        } else {
-            symbols += `,${stocks[i].ticker}`
-        }
-    }
-    const url = base + symbols + types + key
+    const url = makeStockUpdateApiUrl(stocks)
 
     try {
         const response = await axios.get(url)
@@ -120,7 +122,7 @@ portfolioRouter.post('/update', async (req, res, next) => {
                     const latestPrice = updatedStocks[i].quote.latestPrice
                     stock.price = latestPrice
                     stock.date = updatedStocks[i].quote.latestUpdate
-                    stock.currentWeight = (latestPrice * stock.shares) / portfolioValue
+                    stock.currentWeight = (latestPrice * stock.shares) /getPortfolioValue(stocks)
                 }
             }
         })
@@ -130,7 +132,6 @@ portfolioRouter.post('/update', async (req, res, next) => {
         console.log(error)
         return res.status(401).json({ error: 'stock not found' })
     }
-
 })
 
 portfolioRouter.post('/asset', async (req, res, next) => {
@@ -162,7 +163,6 @@ portfolioRouter.post('/asset', async (req, res, next) => {
         date: body.date || new Date(),
         targetWeight: body.targetWeight,
         currentWeight: body.price * body.shares / (totalPortfolioValue + body.price * body.shares),
-        testValue: "HELLO"
     }
 
     const foundStockIndex = user.assets.stocks.findIndex(asset => asset.ticker === stock.ticker)

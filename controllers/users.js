@@ -39,18 +39,34 @@ usersRouter.post('/', async (req, res, next) => {
     }
 })
 
+usersRouter.post('/settings', async (req, res, next) => {
+    const token = extractToken(req)
+    const decodedToken = jwt.verify(token, process.env.SECRET)
+    if (!token || !decodedToken) {
+        return res.status(401).json({ error: 'invalid token' })
+    }
+    const newSettings = req.body.settings
+    try {
+        const user = await User.findById(decodedToken.id)
+        user.settings = newSettings
+        const updatedUser = user.save()
+        res.status(204).json(updatedUser)
+    } catch (exception) {
+        next(exception)
+    }
+})
 
 usersRouter.delete('/', async (req, res, next) => {
     const token = extractToken(req)
     const decodedToken = jwt.verify(token, process.env.SECRET)
-    if(!token || !decodedToken){
-        return res.status(401).json({error: 'invalid token'})
+    if (!token || !decodedToken) {
+        return res.status(401).json({ error: 'invalid token' })
     }
 
-    try{
+    try {
         await User.findByIdAndRemove(decodedToken.id)
         res.status(204).end()
-    }catch(exception){
+    } catch (exception) {
         next(exception)
     }
 })

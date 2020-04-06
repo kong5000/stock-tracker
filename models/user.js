@@ -17,6 +17,9 @@ const userSchema = new mongoose.Schema(
                 currentWeight: Number,
                 targetWeight: Number,
             }]
+        },
+        settings: {
+            balanceThreshold: Number,
         }
     }
 )
