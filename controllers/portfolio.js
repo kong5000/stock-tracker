@@ -33,6 +33,30 @@ const makeStockUpdateApiUrl = (stocks) => {
     return base + symbols + types + key
 }
 
+const makeChartApiUrl = (symbol) => {
+    const base = `https://cloud.iexapis.com/stable/stock/${symbol}/batch?`
+    const parameters = '&types=chart&range=6m&chartCloseOnly=true'
+    const key = `&token=${process.env.IEX_API_KEY}`
+    return base + parameters + key
+}
+
+portfolioRouter.post('/chart', async(req, res, next) =>{
+    const body= req.body
+    const token = extractToken(req)
+    const decodedToken = jwt.verify(token, process.env.SECRET)
+    if (!token || !decodedToken) {
+        return res.status(401).json({ error: 'invalid token' })
+    }
+    const url = makeChartApiUrl(body.ticker)
+    try {
+        const response = await axios.get(url)
+        res.status(200).json(response.data)
+    } catch (error) {
+        console.log(error)
+        return res.status(401).json({ error: 'stock not found' })
+    }
+})
+
 portfolioRouter.get('/', async (req, res, next) => {
     const token = extractToken(req)
     const decodedToken = jwt.verify(token, process.env.SECRET)
