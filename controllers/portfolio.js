@@ -36,8 +36,9 @@ const makeStockUpdateApiUrl = (stocks) => {
 const makeChartApiUrl = (symbol) => {
     const base = `https://cloud.iexapis.com/stable/stock/${symbol}/batch?`
     const parameters = '&types=chart&range=6m&chartCloseOnly=true'
+    const filter= '&filter=date,close'
     const key = `&token=${process.env.IEX_API_KEY}`
-    return base + parameters + key
+    return base + parameters + filter + key
 }
 
 portfolioRouter.post('/chart', async(req, res, next) =>{
@@ -50,6 +51,14 @@ portfolioRouter.post('/chart', async(req, res, next) =>{
     const url = makeChartApiUrl(body.ticker)
     try {
         const response = await axios.get(url)
+        const chart = response.data.chart
+
+        // let reducedChart = chart.filter((element, index) => {
+        //     return index % 30 === 0;
+        //   })
+        // const finalChart =[...reducedChart, chart[chart.length - 1]]
+        // res.status(200).json(finalChart)
+        console.log(response)
         res.status(200).json(response.data)
     } catch (error) {
         console.log(error)
@@ -119,6 +128,24 @@ portfolioRouter.post('/sell', async (req, res, next) => {
 
     await user.save()
     res.status(200).json(user.assets)
+})
+
+portfolioRouter.post('/allocation', async (req, res, next) => {
+    const token = extractToken(req)
+    const decodedToken = jwt.verify(token, process.env.SECRET)
+    if (!token || !decodedToken) {
+        return res.status(401).json({ error: 'invalid token' })
+    }
+    const updatedStocks = req.body.stocks
+    console.log(updatedStocks)
+
+
+    const user = await User.findById(decodedToken.id)
+    const stocks = user.assets.stocks
+    user.assets.stocks = updatedStocks
+    
+    const updatedUser = await user.save()
+    return res.status(200).send(updatedUser.assets)
 })
 
 portfolioRouter.post('/update', async (req, res, next) => {
