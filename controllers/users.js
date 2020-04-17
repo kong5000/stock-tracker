@@ -23,8 +23,9 @@ usersRouter.post('/', async (req, res, next) => {
     if (body.username.length < MIN_USERNAME_LENGTH) {
         return res.status(400).send({ error: 'username must be > 2 characters' })
     }
+    const alreadyExists = await User.findOne({username: body.username})
 
-    if(User.find({username: body.username})){
+    if(alreadyExists){
         return res.status(400).send({ error: 'username already in use' })
     }
 
