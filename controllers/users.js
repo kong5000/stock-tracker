@@ -3,7 +3,8 @@ const User = require('../models/user')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 
-const MIN_PASSWORD_LENGTH = 4
+const MIN_PASSWORD_LENGTH = 5
+const MIN_USERNAME_LENGTH = 3
 const SALT_ROUNDS = 10
 
 const extractToken = (request) => {
@@ -17,7 +18,14 @@ const extractToken = (request) => {
 usersRouter.post('/', async (req, res, next) => {
     const body = req.body
     if (body.password.length < MIN_PASSWORD_LENGTH) {
-        return res.status(400).send({ error: 'password must be greater than 4 characters' })
+        return res.status(400).send({ error: 'password must be > 4 characters' })
+    }
+    if (body.username.length < MIN_USERNAME_LENGTH) {
+        return res.status(400).send({ error: 'username must be > 2 characters' })
+    }
+
+    if(User.find({username: body.username})){
+        return res.status(400).send({ error: 'username already in use' })
     }
 
     const passwordHash = await bcrypt.hash(body.password, SALT_ROUNDS)

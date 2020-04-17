@@ -137,11 +137,8 @@ portfolioRouter.post('/allocation', async (req, res, next) => {
         return res.status(401).json({ error: 'invalid token' })
     }
     const updatedStocks = req.body.stocks
-    console.log(updatedStocks)
-
 
     const user = await User.findById(decodedToken.id)
-    const stocks = user.assets.stocks
     user.assets.stocks = updatedStocks
     
     const updatedUser = await user.save()
