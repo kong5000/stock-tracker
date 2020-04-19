@@ -52,13 +52,6 @@ portfolioRouter.post('/chart', async(req, res, next) =>{
     try {
         const response = await axios.get(url)
         const chart = response.data.chart
-
-        // let reducedChart = chart.filter((element, index) => {
-        //     return index % 30 === 0;
-        //   })
-        // const finalChart =[...reducedChart, chart[chart.length - 1]]
-        // res.status(200).json(finalChart)
-        console.log(response)
         res.status(200).json(response.data)
     } catch (error) {
         console.log(error)
@@ -136,13 +129,16 @@ portfolioRouter.post('/allocation', async (req, res, next) => {
     if (!token || !decodedToken) {
         return res.status(401).json({ error: 'invalid token' })
     }
-    const updatedStocks = req.body.stocks
+    if(req.body.stocks){
+        const updatedStocks = req.body.stocks
 
-    const user = await User.findById(decodedToken.id)
-    user.assets.stocks = updatedStocks
-    
-    const updatedUser = await user.save()
-    return res.status(200).send(updatedUser.assets)
+        const user = await User.findById(decodedToken.id)
+        user.assets.stocks = updatedStocks
+        
+        const updatedUser = await user.save()
+        return res.status(200).send(updatedUser.assets)
+    }
+    return res.status(400).end()
 })
 
 portfolioRouter.post('/update', async (req, res, next) => {
@@ -204,7 +200,7 @@ portfolioRouter.post('/asset', async (req, res, next) => {
 
     const stock = {
         ticker: body.ticker,
-        name: body.name,
+        name: body.name ? body.name : '',
         shares: body.shares,
         price: body.price,
         costBasis: body.price,
@@ -227,6 +223,19 @@ portfolioRouter.post('/asset', async (req, res, next) => {
 
     const updatedUser = await user.save()
     res.json(updatedUser.assets)
+})
+
+portfolioRouter.post('/cash', async (req, res, next) => {
+    const token = extractToken(req)
+    const decodedToken = jwt.verify(token, process.env.SECRET)
+    if (!token || !decodedToken) {
+        return res.status(401).json({ error: 'invalid token' })
+    }
+    const newCash = Number(req.body.cash)
+    const user = await User.findById(decodedToken.id)
+    user.assets.cash += newCash
+    await user.save()
+    res.status(200).json(user.assets)
 })
 
 module.exports = portfolioRouter

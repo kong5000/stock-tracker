@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema(
             cash: {type: Number, default: 0},
             stocks: [{
                 ticker: {type: String, required: true},
-                name: {type: String, required: true},
+                name: String,
                 shares: {type: Number, required: true},
                 price: {type: String, required: true},
                 costBasis: Number,
