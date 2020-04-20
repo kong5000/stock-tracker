@@ -15,6 +15,7 @@ const extractToken = (request) => {
     return null
 }
 
+
 usersRouter.post('/', async (req, res, next) => {
     const body = req.body
     if (body.password.length < MIN_PASSWORD_LENGTH) {
@@ -33,7 +34,10 @@ usersRouter.post('/', async (req, res, next) => {
 
     const user = new User({
         username: body.username,
-        passwordHash
+        passwordHash,
+        settings: {
+            balanceThreshold: 5
+        }
     })
 
     try {
@@ -59,7 +63,42 @@ usersRouter.post('/settings', async (req, res, next) => {
         const user = await User.findById(decodedToken.id)
         user.settings = newSettings
         const updatedUser = user.save()
-        res.status(204).json(updatedUser)
+        res.status(200).json(updatedUser)
+    } catch (exception) {
+        next(exception)
+    }
+})
+
+
+usersRouter.post('/threshold', async (req, res, next) => {
+    const token = extractToken(req)
+    const decodedToken = jwt.verify(token, process.env.SECRET)
+    if (!token || !decodedToken) {
+        return res.status(401).json({ error: 'invalid token' })
+    }
+ 
+    try {
+        const user = await User.findById(decodedToken.id)
+        const newThreshold = req.body.balanceThreshold
+        console.log(newThreshold, 'NEW THRESH HERE')
+        user.settings.balanceThreshold = newThreshold
+        const updatedUser = await user.save()
+        console.log(updatedUser)
+        res.status(200).json(updatedUser.settings)
+    } catch (exception) {
+        next(exception)
+    }
+})
+
+usersRouter.get('/settings', async (req, res, next) => {
+    const token = extractToken(req)
+    const decodedToken = jwt.verify(token, process.env.SECRET)
+    if (!token || !decodedToken) {
+        return res.status(401).json({ error: 'invalid token' })
+    }
+    try {
+        const user = await User.findById(decodedToken.id)
+        res.status(200).json(user.settings)
     } catch (exception) {
         next(exception)
     }

@@ -174,14 +174,15 @@ portfolioRouter.post('/update', async (req, res, next) => {
         res.status(200).send(updatedUser.assets)
     } catch (error) {
         console.log(error)
-        return res.status(401).json({ error: 'stock not found' })
+        return res.status(401).json({ error: 'user not found' })
     }
 })
 
 portfolioRouter.post('/asset', async (req, res, next) => {
     const body = req.body
-    
+
     const token = extractToken(req)
+    
     const decodedToken = jwt.verify(token, process.env.SECRET)
     if (!token || !decodedToken) {
         return res.status(401).json({ error: 'invalid token' })
@@ -234,6 +235,9 @@ portfolioRouter.post('/cash', async (req, res, next) => {
     const newCash = Number(req.body.cash)
     const user = await User.findById(decodedToken.id)
     user.assets.cash += newCash
+    if(user.assets.cash < 0){
+        return res.status(400).json({error: 'negative balance'})
+    }
     await user.save()
     res.status(200).json(user.assets)
 })
