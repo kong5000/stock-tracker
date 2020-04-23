@@ -2,6 +2,7 @@ const portfolioRouter = require('express').Router()
 const User = require('../models/user')
 const jwt = require('jsonwebtoken')
 const axios = require('axios')
+const HALF_HOUR = 1800
 
 const extractToken = (request) => {
     const authorization = request.get('authorization')
@@ -36,26 +37,59 @@ const makeStockUpdateApiUrl = (stocks) => {
 const makeChartApiUrl = (symbol) => {
     const base = `https://cloud.iexapis.com/stable/stock/${symbol}/batch?`
     const parameters = '&types=chart&range=6m&chartCloseOnly=true'
-    const filter= '&filter=date,close'
+    const filter = '&filter=date,close'
     const key = `&token=${process.env.IEX_API_KEY}`
     return base + parameters + filter + key
 }
 
-portfolioRouter.post('/chart', async(req, res, next) =>{
-    const body= req.body
+portfolioRouter.post('/chart', async (req, res, next) => {
+    const body = req.body
     const token = extractToken(req)
     const decodedToken = jwt.verify(token, process.env.SECRET)
     if (!token || !decodedToken) {
         return res.status(401).json({ error: 'invalid token' })
     }
+
+    const user = await User.findById(decodedToken.id)
+    const stocks = user.assets.stocks
+    const stockToChartIndex = stocks.findIndex(stock => stock.ticker == body.ticker)
+    const stockToChart = stocks[stockToChartIndex]
+
+    const currentDate = new Date()
+
+    //If the stock has a chart
+    if (stockToChart.lastChartUpdate) {
+        console.log('USING FROM MEMORY')
+        //If that chart has been updated recently
+        console.log(stockToChart.lastChartUpdate)
+        console.log('Last update was',stockToChart.lastChartUpdate.getTime())
+        console.log('Time now is',currentDate.getTime())
+        console.log('Seconds since last update', (currentDate.getTime() - stockToChart.lastChartUpdate.getTime()  ) / 1000 )
+        if ((currentDate.getTime() - stockToChart.lastChartUpdate.getTime()) / 1000 < HALF_HOUR) {
+            //Dont make an API request to IEX and just return the existing chart
+            return res.status(200).json(stockToChart.chart)
+        }
+    }
+
     const url = makeChartApiUrl(body.ticker)
     try {
+        console.log('API REQUEST MADE')
         const response = await axios.get(url)
-        const chart = response.data.chart
-        res.status(200).json(response.data)
+        const chart = response.data
+        //Update the user's stored chart of the stock
+        user.assets.stocks[stockToChartIndex].chart = chart
+        user.assets.stocks[stockToChartIndex].lastChartUpdate = new Date()
+        await user.save()
+
+        // console.log(response.data)
+        // res.status(200).json(response.data)
+
+        res.status(200).json( user.assets.stocks[stockToChartIndex].chart )
     } catch (error) {
-        console.log(error)
-        return res.status(401).json({ error: 'stock not found' })
+        console.log(error.response.statusText)
+        // Payment Required
+        // Not Found
+        return res.status(401).json({ error: error.response.statusText })
     }
 })
 
@@ -115,7 +149,7 @@ portfolioRouter.post('/sell', async (req, res, next) => {
         const updatedStockList = user.assets.stocks.filter(stock => stock.shares > 0)
         user.assets.stocks = updatedStockList
     }
-    if(body.useCash){
+    if (body.useCash) {
         user.assets.cash += body.shares * body.price
     }
 
@@ -129,12 +163,12 @@ portfolioRouter.post('/allocation', async (req, res, next) => {
     if (!token || !decodedToken) {
         return res.status(401).json({ error: 'invalid token' })
     }
-    if(req.body.stocks){
+    if (req.body.stocks) {
         const updatedStocks = req.body.stocks
 
         const user = await User.findById(decodedToken.id)
         user.assets.stocks = updatedStocks
-        
+
         const updatedUser = await user.save()
         return res.status(200).send(updatedUser.assets)
     }
@@ -150,7 +184,7 @@ portfolioRouter.post('/update', async (req, res, next) => {
 
 
     const user = await User.findById(decodedToken.id)
-    if(user.assets.stocks.length === 0){
+    if (user.assets.stocks.length === 0) {
         return res.status(200).end()
     }
 
@@ -166,7 +200,7 @@ portfolioRouter.post('/update', async (req, res, next) => {
                     const latestPrice = updatedStocks[i].quote.latestPrice
                     stock.price = latestPrice
                     stock.date = updatedStocks[i].quote.latestUpdate
-                    stock.currentWeight = (latestPrice * stock.shares) /getPortfolioValue(stocks)
+                    stock.currentWeight = (latestPrice * stock.shares) / getPortfolioValue(stocks)
                 }
             }
         })
@@ -182,7 +216,7 @@ portfolioRouter.post('/asset', async (req, res, next) => {
     const body = req.body
 
     const token = extractToken(req)
-    
+
     const decodedToken = jwt.verify(token, process.env.SECRET)
     if (!token || !decodedToken) {
         return res.status(401).json({ error: 'invalid token' })
@@ -190,10 +224,10 @@ portfolioRouter.post('/asset', async (req, res, next) => {
 
     const user = await User.findById(decodedToken.id)
 
-    if(body.useCash){
-        if(user.assets.cash < body.shares * body.price){
+    if (body.useCash) {
+        if (user.assets.cash < body.shares * body.price) {
             return res.status(400).json({ error: 'insufficient cash in portfolio' })
-        }else{
+        } else {
             user.assets.cash -= body.shares * body.price
         }
     }
@@ -235,8 +269,8 @@ portfolioRouter.post('/cash', async (req, res, next) => {
     const newCash = Number(req.body.cash)
     const user = await User.findById(decodedToken.id)
     user.assets.cash += newCash
-    if(user.assets.cash < 0){
-        return res.status(400).json({error: 'negative balance'})
+    if (user.assets.cash < 0) {
+        return res.status(400).json({ error: 'negative balance' })
     }
     await user.save()
     res.status(200).json(user.assets)

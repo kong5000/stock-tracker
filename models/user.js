@@ -16,6 +16,9 @@ const userSchema = new mongoose.Schema(
                 date: Number,
                 currentWeight: Number,
                 targetWeight: Number,
+                chart: Object,
+                lastChartUpdate: Date,
+                lastPriceUpdate: Date
             }]
         },
         settings: {
