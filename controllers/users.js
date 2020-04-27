@@ -52,6 +52,23 @@ usersRouter.post('/', async (req, res, next) => {
     }
 })
 
+usersRouter.post('/alerts', async (req, res, next) => {
+    const token = extractToken(req)
+    const decodedToken = jwt.verify(token, process.env.SECRET)
+    if (!token || !decodedToken) {
+        return res.status(401).json({ error: 'invalid token' })
+    }
+    try{
+        const user = await User.findById(decodedToken.id)
+        user.settings.email = req.body.email
+        user.settings.alertFrequency = req.body.alertFrequency
+        const updatedUser = await user.save()
+        return res.status(200).json(updatedUser)
+    } catch (exception){
+        return res.status(400).json({error: 'Could not update settings'})
+    }
+})
+
 usersRouter.post('/settings', async (req, res, next) => {
     const token = extractToken(req)
     const decodedToken = jwt.verify(token, process.env.SECRET)

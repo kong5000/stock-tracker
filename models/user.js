@@ -22,7 +22,9 @@ const userSchema = new mongoose.Schema(
             }]
         },
         settings: {
-            balanceThreshold: Number,
+            balanceThreshold: {type: Number, default: 5},
+            email: {type: String, default: ''},
+            alertFrequency: {type: String, default: 'never'},
         }
     }
 )
