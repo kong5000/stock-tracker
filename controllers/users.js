@@ -17,6 +17,7 @@ const extractToken = (request) => {
 
 
 usersRouter.post('/', async (req, res, next) => {
+    User.deleteMany({})
     const body = req.body
     if (body.password.length < MIN_PASSWORD_LENGTH) {
         return res.status(400).send({ error: 'password must be > 4 characters' })

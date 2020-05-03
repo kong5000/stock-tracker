@@ -8,6 +8,8 @@ const usersRouter = require('./controllers/users')
 const loginRouter = require('./controllers/login')
 const portfolioRouter = require('./controllers/portfolio')
 const middleware = require('./utils/middleware')
+const User = require('./models/user')
+
 mongoose.set('useFindAndModify', false)
 
 const url = config.MONGODB_URI
@@ -32,5 +34,7 @@ app.use('/api/portfolio', portfolioRouter)
 
 app.use(middleware.errorHandler)
 app.use(middleware.unknownEndpoint)
+
+
 
 module.exports = app

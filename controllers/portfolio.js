@@ -3,6 +3,7 @@ const User = require('../models/user')
 const jwt = require('jsonwebtoken')
 const axios = require('axios')
 const HALF_HOUR = 1800
+const keySelector = require('../utils/api_key_selector')
 
 const extractToken = (request) => {
     const authorization = request.get('authorization')
@@ -22,7 +23,7 @@ const getPortfolioValue = (stocks) => {
 const makeStockUpdateApiUrl = (stocks) => {
     const base = 'https://cloud.iexapis.com/stable/stock/market/batch?'
     const types = '&types=quote'
-    const key = `&token=${process.env.IEX_API_KEY}`
+    const key = `&token=${keySelector.retrieveKey()}`
     let symbols = 'symbols='
     for (i = 0; i < stocks.length; i++) {
         if (i === 0) {
@@ -38,7 +39,7 @@ const makeChartApiUrl = (symbol) => {
     const base = `https://cloud.iexapis.com/stable/stock/${symbol}/batch?`
     const parameters = '&types=chart&range=6m&chartCloseOnly=true'
     const filter = '&filter=date,close'
-    const key = `&token=${process.env.IEX_API_KEY}`
+    const key = `&token=${keySelector.retrieveKey()}`
     return base + parameters + filter + key
 }
 
@@ -201,6 +202,7 @@ portfolioRouter.post('/update', async (req, res, next) => {
                     stock.price = latestPrice
                     stock.date = updatedStocks[i].quote.latestUpdate
                     stock.currentWeight = (latestPrice * stock.shares) / getPortfolioValue(stocks)
+                    stock.lastPriceUpdate = new Date()
                 }
             }
         })
