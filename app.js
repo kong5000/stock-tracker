@@ -26,13 +26,19 @@ mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
 const app = express()
 app.use(cors())
 app.use(express.json())
+app.use(express.static('build'))
 app.use(morgan('tiny'))
 app.use('/api/users', usersRouter)
 app.use('/api/login', loginRouter)
 app.use('/api/portfolio', portfolioRouter)
 
-
 app.use(middleware.errorHandler)
+
+//Catch all if user refreshes page
+app.get('/*', (req, res) => {
+    res.sendFile(__dirname + '/build/index.html');
+})
+  
 app.use(middleware.unknownEndpoint)
 
 

@@ -19,13 +19,14 @@ const userSchema = new mongoose.Schema(
                 chart: Object,
                 lastChartUpdate: Date,
                 lastPriceUpdate: Date
-            }]
+            }],
+            lastUpdate: Date
         },
         settings: {
             balanceThreshold: {type: Number, default: 5},
             email: {type: String, default: ''},
             alertFrequency: {type: String, default: 'never'},
-        }
+        },   
     }
 )
 

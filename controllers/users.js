@@ -38,6 +38,11 @@ usersRouter.post('/', async (req, res, next) => {
         passwordHash,
         settings: {
             balanceThreshold: 5
+        },
+        assets: {
+            cash: 0,
+            stocks: [],
+            lastUpdate: new Date()
         }
     })
 

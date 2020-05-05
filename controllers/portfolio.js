@@ -43,11 +43,6 @@ const makeChartApiUrl = (symbol) => {
     return base + parameters + filter + key
 }
 
-portfolioRouter.get('/', async (req, res, next) =>{
-    res.status(200).json({ response: 'test response' })
-})
-
-
 portfolioRouter.post('/chart', async (req, res, next) => {
     const body = req.body
     const token = extractToken(req)
@@ -209,6 +204,7 @@ portfolioRouter.post('/update', async (req, res, next) => {
                 }
             }
         })
+        user.assets.lastUpdate = new Date()
         const updatedUser = await user.save()
         res.status(200).send(updatedUser.assets)
     } catch (error) {
