@@ -82,12 +82,10 @@ portfolioRouter.post('/chart', async (req, res, next) => {
         user.assets.stocks[stockToChartIndex].lastChartUpdate = new Date()
         await user.save()
 
-        // console.log(response.data)
-        // res.status(200).json(response.data)
-
         res.status(200).json( user.assets.stocks[stockToChartIndex].chart )
     } catch (error) {
         console.log(error.response.statusText)
+        // Errors Can be either:
         // Payment Required
         // Not Found
         return res.status(401).json({ error: error.response.statusText })

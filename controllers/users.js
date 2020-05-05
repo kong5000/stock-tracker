@@ -87,7 +87,6 @@ usersRouter.post('/settings', async (req, res, next) => {
     }
 })
 
-
 usersRouter.post('/threshold', async (req, res, next) => {
     const token = extractToken(req)
     const decodedToken = jwt.verify(token, process.env.SECRET)
